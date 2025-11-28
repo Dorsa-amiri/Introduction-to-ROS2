@@ -319,7 +319,7 @@ ros2 launch rpros2_week2_assignment wheel2robot_service.launch.py
 ## **Terminal Outputs (Server & Client)**
 
 <div align="center">  
-<img src="figures/week2/assignment2.png" width="900"/>  
+<img src="figures/week2/assignment2.jpg" width="900"/>  
 </div>  
 
 **Fig. 3.** *Server (top) and Client (bottom) outputs for the velocity conversion service.*
