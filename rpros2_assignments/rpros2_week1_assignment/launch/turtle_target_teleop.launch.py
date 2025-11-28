@@ -56,6 +56,20 @@ def generate_launch_description():
         # Note: If 'xterm' is not installed on your system, install it using:
         #       sudo apt install xterm
         #
+        Node(
+            package='turtlesim',
+            executable='turtlesim_node',
+            name='turtlesim',
+            output='screen'
+        ),
+
+        Node(
+            package='rpros2_week1_assignment',
+            executable='turtle_target_plot',
+            name='turtle_target_plot',
+            output='screen'
+        ),
+        
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
         ExecuteProcess(
