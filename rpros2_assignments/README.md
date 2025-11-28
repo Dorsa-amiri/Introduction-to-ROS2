@@ -99,23 +99,9 @@ This should open `turtlesim`, start the plot node (shows turtle + random target)
 ### Reuslts:
 You should include figures or screen recordings of your results in the folder `./figures/rpros2_week1/`. Below is a sample markdown structure for embedding figures (e.g., `.png`, `.jpg`, or `.gif`):
 
-<div align="center">
+<div align="center"> | <img src=".\figures\week1\vid_part1_assignment1.gif" alt="turtle_target_teleop_node_example" width="1024"/> | |:--:| | <b>Fig. 1.</b> Turtlesim Target Visualization and Teleop Node Example | </div> 
 
-<video src="./figures/week1/vid_part1_assignment1.mp4" width="1024" controls></video>
-
-**Fig. 1.** Turtlesim Target Visualization and Teleop Node Example (Video)
-
-</div>
-
-<br>
-
-<div align="center">
-
-<video src="./figures/week1/vid_part2_assignment2.mp4" width="1024" controls></video>
-
-**Fig. 2.** Turtlesim Target Visualization and Teleop Launch Example (Video)
-
-</div>
+<div align="center"> | <img src=".\figures\week1\vid_part2_assignment1.gif" alt="turtle_target_teleop_launch_example" width="1024"/> | |:--:| | <b>Fig. 2.</b> Turtlesim Target Visualization and Teleop Launch Example | </div>
 
 
 ### Challenges:
