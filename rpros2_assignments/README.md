@@ -101,19 +101,22 @@ You should include figures or screen recordings of your results in the folder `.
 
 <div align="center">
 
-| <img src=".\figures\week1\turtle_target_teleop_node_example.gif" alt="turtle_target_teleop_node_example" width="1024"/> |
-|:--:| 
-| <b>Fig. 1.</b> Turtlesim Target Visualization and Teleop Node Example |
+<video src="./figures/week1/vid_part1_assignment1.mp4" width="1024" controls></video>
+
+**Fig. 1.** Turtlesim Target Visualization and Teleop Node Example (Video)
 
 </div>
+
+<br>
 
 <div align="center">
-  
-| <img src=".\figures\week1\turtle_target_teleop_launch_example.gif" alt="turtle_target_teleop_launch_example" width="1024"/> |
-|:--:| 
-| <b>Fig. 2.</b> Turtlesim Target Visualization and Teleop Launch Example |
+
+<video src="./figures/week1/vid_part2_assignment2.mp4" width="1024" controls></video>
+
+**Fig. 2.** Turtlesim Target Visualization and Teleop Launch Example (Video)
 
 </div>
+
 
 ### Challenges:
 Describe any errors, issues, or challenges you encountered during this assignment.
