@@ -20,6 +20,8 @@ setup(
         # section of 'setup.py'. This ensures that the launch file is installed
         # properly and can be accessed using ROS 2 launch commands.
         #
+        ('share/rpros2_week1_assignment/launch', ['launch/turtle_target_teleop.launch.py']),
+
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     ],
     install_requires=['setuptools'],
@@ -37,6 +39,8 @@ setup(
             # 'setup.py'. This ensures that the nodes can be launched and run
             # using 'ros2 run' commands.
             #
+            'turtle_keyboard_control = rpros2_week1_assignment.turtle_keyboard_control:main',
+            'turtle_target_plot = rpros2_week1_assignment.turtle_target_plot:main',
             # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         ],
     },
