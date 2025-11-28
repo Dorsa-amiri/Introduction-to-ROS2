@@ -48,6 +48,7 @@ from rclpy.node import Node
 # including the ROS client library (rclpy) and the message types
 # required for your node, such as Twist from geometry_msgs.msg.
 #
+from geometry_msgs.msg import Twist
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 import sys, termios, tty, select
@@ -63,6 +64,7 @@ class TurtleKeyboardController(Node):
         # 'Twist' message type from 'geometry_msgs.msg'. The callback function
         # that processes incoming messages should be named 'pose_callback'.
         #
+        self.cmd_pub = self.create_publisher(Twist, '/turtle1/cmd_vel', 10)
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         # Define fixed turtle velocities
@@ -93,6 +95,8 @@ class TurtleKeyboardController(Node):
         # commands that correspond to each keyboard input (e.g., I, ,,
         # J, L, K) and will be published to control the turtle's motion.
         # 
+        twist = Twist()
+
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         try:
@@ -124,6 +128,7 @@ class TurtleKeyboardController(Node):
                 #
                 # TODO: Publish the 'twist' message to the '/turtle1/cmd_vel' topic
                 # 
+                self.cmd_pub.publish(twist)
                 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         except KeyboardInterrupt:
@@ -136,13 +141,24 @@ class TurtleKeyboardController(Node):
             # topic. This ensures that the turtle stops moving safely when
             # the program ends.
             # 
+            twist.linear.x = 0.0
+            twist.linear.y = 0.0
+            twist.linear.z = 0.0
+            twist.angular.x = 0.0
+            twist.angular.y = 0.0
+            twist.angular.z = 0.0
+            try:
+                self.cmd_pub.publish(twist)
+            except Exception:
+                pass
+
             # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
             self.get_logger().info("Exiting keyboard controller...")
 
 
 def main(args=None):
-    pass
+    
 
     # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
     #
@@ -150,6 +166,23 @@ def main(args=None):
     # an instance of the TurtleTargetPlotter node. This will prepare the
     # node for spinning and allow it to publish velocity commands.
     #
+    rclpy.init(args=args)
+    node = None
+    try:
+        node = TurtleKeyboardController()
+        # TurtleKeyboardController.__init__ calls run() and blocks until exit.
+        # After it returns, just continue to cleanup below.
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if node is not None:
+            try:
+                node.destroy_node()
+            except Exception:
+                pass
+        rclpy.shutdown()
+
+
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
