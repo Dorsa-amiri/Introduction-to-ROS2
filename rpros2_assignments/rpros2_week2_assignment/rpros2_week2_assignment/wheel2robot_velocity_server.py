@@ -12,6 +12,7 @@ from rclpy.node import Node
 # will be used to convert robot linear and angular
 # velocities (v, w) into individual wheel speeds (v_l, v_r).
 #
+from rpros2_interfaces_clean.srv import Wheel2RobotVelocity
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
@@ -30,6 +31,9 @@ class Wheel2RobotVelocityServer(Node):
         #
         # Tip: Use `ros2 param list` to verify your parameters are correctly declared.
         #
+        self.declare_parameter('wheel_radius', 0.1)       # meters
+        self.declare_parameter('wheel_distance', 0.5)     # meters
+        self.declare_parameter('wheel_velocity_unit', 'rpm')  # 'rpm' or 'm/s'
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
         # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
@@ -43,6 +47,13 @@ class Wheel2RobotVelocityServer(Node):
         # `compute_callback()`, where you will perform the
         # necessary velocity calculations.
         #
+        self.srv = self.create_service(
+            Wheel2RobotVelocity,
+            'compute_wheel_velocities',
+            self.compute_callback
+        )
+
+        self.get_logger().info('Wheel2RobotVelocity service ready: compute_wheel_velocities')
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     def compute_callback(self, request, response):
@@ -66,12 +77,39 @@ class Wheel2RobotVelocityServer(Node):
         # whether to output the speeds in 'rpm' or 'm/s' and apply
         # the proper conversion.
         #
+        wheel_radius = self.get_parameter('wheel_radius').get_parameter_value().double_value
+        wheel_distance = self.get_parameter('wheel_distance').get_parameter_value().double_value
+        wheel_velocity_unit = self.get_parameter('wheel_velocity_unit').get_parameter_value().string_value
+
+        v = float(request.v)
+        w = float(request.w)
+
+        v_r_linear = (2.0 * v + w * wheel_distance) / 2.0
+        v_l_linear = (2.0 * v - w * wheel_distance) / 2.0
+
+        if wheel_velocity_unit.lower() == 'm/s':
+            response.v_l = float(v_l_linear)
+            response.v_r = float(v_r_linear)
+        elif wheel_velocity_unit.lower() == 'rpm':
+            if wheel_radius <= 0.0:
+                self.get_logger().warn('wheel_radius <= 0.0, cannot convert to rpm. Returning zeros.')
+                response.v_l = 0.0
+                response.v_r = 0.0
+            else:
+                response.v_l = float((v_l_linear / (2.0 * math.pi * wheel_radius)) * 60.0)
+                response.v_r = float((v_r_linear / (2.0 * math.pi * wheel_radius)) * 60.0)
+        else:
+            self.get_logger().warn(f"Unknown wheel_velocity_unit '{wheel_velocity_unit}' — returning linear m/s by default.")
+            response.v_l = float(v_l_linear)
+            response.v_r = float(v_r_linear)
+
+        self.get_logger().info(f"Request v={v:.4f} m/s, w={w:.4f} rad/s -> v_l={response.v_l:.4f}, v_r={response.v_r:.4f} ({wheel_velocity_unit})")
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
         return response
 
-
 def main(args=None):
+
     rclpy.init(args=args)
 
     node = Wheel2RobotVelocityServer()
