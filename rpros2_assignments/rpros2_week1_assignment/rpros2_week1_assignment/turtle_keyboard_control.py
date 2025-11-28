@@ -33,11 +33,18 @@
 # Week 1
 # Assignment:
 #  
-# Custom Keyboard Teleoperation for Turtlesim
+# Turtle Pose Plotter and Random Target Generator
 #
-# This node reads keyboard inputs and publishes velocity commands
-# of type geometry_msgs/msg/Twist to the /turtle1/cmd_vel topic in order to
-# control the motion of a Turtlesim turtle.
+# This node subscribes to /turtle1/pose of type turtlesim/msg/Pose
+# and visualizes the turtle position on a 10x10 grid using matplotlib. A 1x1
+# target square is randomly generated. When the turtle reaches the square,
+# a new target is generated and displayed. The node provides a real-time visual
+# representation of the turtle navigating towards successive random targets.
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+import random
 
 import rclpy
 from rclpy.node import Node
@@ -46,144 +53,156 @@ from rclpy.node import Node
 #
 # TODO: Import all necessary Python modules for ROS 2 functionality,
 # including the ROS client library (rclpy) and the message types
-# required for your node, such as Twist from geometry_msgs.msg.
+# required for your node, such as Pose from turtlesim.msg.
 #
-from geometry_msgs.msg import Twist
+from turtlesim.msg import Pose
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-import sys, termios, tty, select
-
-class TurtleKeyboardController(Node):
+class TurtleTargetPlotter(Node):
     def __init__(self):
-        super().__init__('turtle_keyboard_controller')
+        super().__init__('turtle_target_plotter')
 
         # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
         #
-        # TODO: Create a publisher to the '/turtle1/cmd_vel' topic to 
-        # generate the turtle's linear and angular velocities. Use the 
-        # 'Twist' message type from 'geometry_msgs.msg'. The callback function
-        # that processes incoming messages should be named 'pose_callback'.
+        # TODO: Implement the following functionalities:
         #
-        self.cmd_pub = self.create_publisher(Twist, '/turtle1/cmd_vel', 10)
+        # 1. Create a subscription to the '/turtle1/pose' topic to receive
+        #    the turtle's current position and orientation. Use the 
+        #    'Pose' message type from 'turtlesim.msg'. The callback function
+        #    that processes incoming messages should be named 'pose_callback'.
+        #
+        # 2. Create a timer that periodically updates the plot to reflect
+        #    the turtle's current position and the target square. The timer
+        #    should call the 'update_plot' function at a fixed interval.
+        #
+        # Ensure that both the subscriber and timer are correctly initialized
+        # within the node so the plot updates dynamically as the turtle moves.
+        #
+
+        # create subscription to /turtle1/pose
+        self.subscription = self.create_subscription(
+            Pose,
+            '/turtle1/pose',
+            self.pose_callback,
+            10
+        )
+
+        # create a timer to refresh the plot
+        self.timer = self.create_timer(0.1, self.update_plot)
+
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-        # Define fixed turtle velocities
-        self.linear_speed = 1.5
-        self.angular_speed = 1.57
+        # Turtle state
+        self.x = 5.0
+        self.y = 5.0
+        self.theta = 0.0
 
-        self.get_logger().info("Keyboard control started. Use keys: I (,), J, L, and K.")
-        self.get_logger().info("I: forward | ,: backward | J: turn left | L: turn right | K: stop | Ctrl+C: exit")
+        # Target (1x1 square)
+        self.target_x = random.uniform(0, 9)
+        self.target_y = random.uniform(0, 9)
+        self.target_size = 1.0
 
-        self.run()
+        # Matplotlib setup
+        plt.ion()
+        self.fig, self.ax = plt.subplots(figsize=(6, 6))
+        self.setup_plot()
 
-    def get_key(self):
-        """Read a single key press (non-blocking)."""
-        settings = termios.tcgetattr(sys.stdin)
-        tty.setraw(sys.stdin.fileno())
-        rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
-        key = sys.stdin.read(1) if rlist else ''
-        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-        return key
+        self.get_logger().info("Turtle target plotter started.")
 
-    def run(self):
-        """Main control loop."""
+    def setup_plot(self):
+        """Initialize 10x10 grid."""
+        self.ax.set_xlim(0, 11)
+        self.ax.set_ylim(0, 11)
+        self.ax.set_xticks(np.arange(0, 11, 1))
+        self.ax.set_yticks(np.arange(0, 11, 1))
+        self.ax.grid(True)
+        self.ax.set_xlabel('X')
+        self.ax.set_ylabel('Y')
+        self.ax.set_title('Turtle1 Pose with Random Target')
+
+    def pose_callback(self, msg):
+        """Update turtle pose."""
 
         # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
         #
-        # TODO: Create an instance of the Twist message type named
-        # 'twist'. This message will store the linear and angular velocity
-        # commands that correspond to each keyboard input (e.g., I, ,,
-        # J, L, K) and will be published to control the turtle's motion.
-        # 
-        twist = Twist()
+        # TODO: Update the turtle's current state variables (self.x, self.y,
+        # and self.theta) using the data received from the Pose message of
+        # the subscribed '/turtle1/pose' topic.
+        #
+
+        self.x = msg.x
+        self.y = msg.y
+        self.theta = msg.theta
 
         # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-        try:
-            while rclpy.ok():
-                key = self.get_key().lower()
+        # Check if turtle is inside the target square
+        if (self.target_x <= self.x <= self.target_x + self.target_size) and \
+           (self.target_y <= self.y <= self.target_y + self.target_size):
+            self.get_logger().info("Target reached! Generating new target...")
+            self.generate_new_target()
 
-                if key == 'i':  # Forward
-                    twist.linear.x = self.linear_speed
-                    twist.angular.z = 0.0
-                elif key == ',':  # Backward
-                    twist.linear.x = -self.linear_speed
-                    twist.angular.z = 0.0
-                elif key == 'j':  # Turn left
-                    twist.linear.x = 0.0
-                    twist.angular.z = self.angular_speed
-                elif key == 'l':  # Turn right
-                    twist.linear.x = 0.0
-                    twist.angular.z = -self.angular_speed
-                elif key == 'k':  # Stop
-                    twist.linear.x = 0.0
-                    twist.angular.z = 0.0
-                elif key == '\x03':  # Ctrl+C
-                    break
-                else:
-                    # no valid key, keep last twist
-                    pass
+    def generate_new_target(self):
+        """Generate a new random target within the grid."""
+        self.target_x = random.uniform(0, 9)
+        self.target_y = random.uniform(0, 9)
 
-                # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
-                #
-                # TODO: Publish the 'twist' message to the '/turtle1/cmd_vel' topic
-                # 
-                self.cmd_pub.publish(twist)
-                # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    def update_plot(self):
+        """Redraw plot with current turtle pose and target."""
+        self.ax.cla()
+        self.setup_plot()
 
-        except KeyboardInterrupt:
-            pass
-        finally:
-            # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
-            #
-            # TODO: Set both linear and angular velocities of the
-            # 'twist' message to zero and publish it to the '/turtle1/cmd_vel'
-            # topic. This ensures that the turtle stops moving safely when
-            # the program ends.
-            # 
-            twist.linear.x = 0.0
-            twist.linear.y = 0.0
-            twist.linear.z = 0.0
-            twist.angular.x = 0.0
-            twist.angular.y = 0.0
-            twist.angular.z = 0.0
-            try:
-                self.cmd_pub.publish(twist)
-            except Exception:
-                pass
+        # Draw the target square
+        target_rect = plt.Rectangle(
+            (self.target_x, self.target_y),
+            self.target_size,
+            self.target_size,
+            color='green',
+            alpha=0.4,
+            label='Target'
+        )
+        self.ax.add_patch(target_rect)
 
-            # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # Draw turtle arrow
+        arrow_scale = 0.5
+        dx = np.cos(self.theta) * arrow_scale
+        dy = np.sin(self.theta) * arrow_scale
+        self.ax.arrow(
+            self.x, self.y, dx, dy,
+            head_width=0.2, head_length=0.25,
+            fc='blue', ec='blue', linewidth=2
+        )
 
-            self.get_logger().info("Exiting keyboard controller...")
+        # Draw turtle position
+        self.ax.plot(self.x, self.y, 'ro', label='Turtle')
+
+        plt.draw()
+        plt.pause(0.001)
 
 
 def main(args=None):
-    
 
     # >>>>>>>>>>> STUDENT IMPLEMENTATION >>>>>>>>>>>
     #
     # TODO: Initialize the ROS 2 Python client library (rclpy) and create
     # an instance of the TurtleTargetPlotter node. This will prepare the
-    # node for spinning and allow it to publish velocity commands.
+    # node for spinning and allow it to subscribe to the turtle's pose
+    # and update the plot dynamically.
     #
     rclpy.init(args=args)
-    node = None
+    node = TurtleTargetPlotter()
+
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    
     try:
-        node = TurtleKeyboardController()
-        # TurtleKeyboardController.__init__ calls run() and blocks until exit.
-        # After it returns, just continue to cleanup below.
+        rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        if node is not None:
-            try:
-                node.destroy_node()
-            except Exception:
-                pass
+        node.destroy_node()
+        plt.ioff()
+        plt.show()
         rclpy.shutdown()
-
-
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
 if __name__ == '__main__':
