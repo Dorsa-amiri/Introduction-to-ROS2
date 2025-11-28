@@ -210,6 +210,162 @@ The assignment is broken down into the following steps:
 - Verify that the server node spawns correctly.
 - Confirm that changing parameters in the YAML file affects the service calculations as expected.
 
-### Results: 
+## **1) Creating the Custom Service**
+
+Inside the `rpros2_interfaces_clean` package, I created a new service file:
+
+```
+Wheel2RobotVelocity.srv
+```
+
+The service contains:
+
+**Request:**
+
+```
+float64 v
+float64 w
+```
+
+**Response:**
+
+```
+float64 v_l
+float64 v_r
+```
+
+The `CMakeLists.txt` file was updated so the service is built correctly.
+
+---
+
+## **2) Implementing the Service Server**
+
+The server code is in:
+
+```
+rpros2_week2_assignment/wheel2robot_velocity_server.py
+```
+
+The server:
+
+* Creates the `compute_wheel_velocities` service
+* Reads parameters from the parameter server:
+
+  * `wheel_radius`
+  * `wheel_separation`
+  * `wheel_velocity_unit`
+* Computes the left and right wheel speeds
+* Prints the results in the console
+
+---
+
+## **3) Working with ROS Parameters**
+
+The parameters are loaded from:
+
+```
+config/wheel2robot_service_params.yaml
+```
+
+They can also be changed at runtime, for example:
+
+```
+ros2 param set /wheel2robot_velocity_server wheel_radius 0.05
+```
+
+---
+
+## **4) Implementing the Service Client**
+
+The client is in:
+
+```
+wheel2robot_vel_client.py
+```
+
+It takes `v` and `w` from the command line:
+
+```
+ros2 run rpros2_week2_assignment wheel2robot_vel_client 1.0 0.5
+```
+
+The client sends these values to the server and prints the response.
+
+---
+
+## **5) Launch File**
+
+The launch file is:
+
+```
+wheel2robot_service.launch.py
+```
+
+It starts:
+
+* the service server
+* and loads parameters from the YAML file
+
+Run everything with:
+
+```
+ros2 launch rpros2_week2_assignment wheel2robot_service.launch.py
+```
+
+---
+
+# **Final Test Results**
+
+## **Terminal Outputs (Server & Client)**
+
+<div align="center">  
+<img src="figures/week2/assignment2.png" width="900"/>  
+</div>  
+
+**Fig. 3.** *Server (top) and Client (bottom) outputs for the velocity conversion service.*
+
+**Top terminal (server):**
+This terminal runs the launch file and starts the service server.
+After receiving the request from the client, it prints the computed wheel velocities:
+
+```
+ros2 launch rpros2_week2_assignment wheel2robot_service.launch.py
+...
+[wheel2robot_velocity_server]: Request v=1.0000 m/s, w=0.5000 rad/s -> v_l=83.5563, v_r=107.4296 (rpm)
+```
+
+**Bottom terminal (client):**
+This terminal sends a request with `v = 1.0` and `w = 0.5`.
+The client waits for the service and then receives the response:
+
+```
+ros2 run rpros2_week2_assignment wheel2robot_vel_client 1.0 0.5
+...
+Response: v_l=83.556345, v_r=107.429587
+```
+
+Everything works correctly: the server computes the wheel velocities, and the client prints them.
+
+---
+
+# **Summary of Challenges (Week 2)**
+
+* The biggest issue was that the tag
+  `<member_of_group>rosidl_interface_packages</member_of_group>`
+  was placed **inside `<export>`**, while ROS2 expects it **at the top level** of `package.xml`.
+
+* Because of this, ROS2 didn’t recognize the package as an interface package.
+  As a result:
+
+  * `.srv` files were not being generated
+  * CMake couldn’t find the generated interfaces
+  * The week2 package also failed because it depended on them
+
+* This caused repeated build failures with confusing errors, until I removed the build folders and fixed the tag placement.
+
+* After moving the tag to the correct location, everything built cleanly and both the client and server ran successfully.
+
 
 </div>
+
+
